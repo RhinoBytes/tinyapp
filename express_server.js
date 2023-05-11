@@ -19,6 +19,15 @@ const users = {
   }
 };
 
+function urlsForUser(id) {
+  const userUrls = [];
+  for (const url in urlDatabase) {
+    if (urlDatabase[url].userID === id) {
+      userUrls.push({ shortURL: url, longURL: urlDatabase[url].longURL });
+    }
+  }
+  return userUrls;
+}
 
 function generateRandomString() {
   let result = "";
@@ -31,8 +40,14 @@ function generateRandomString() {
 }
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "userRandomID"
+  },
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userID: "user2RandomID"
+  }
 };
 
 app.use(express.urlencoded({extended: true }));
@@ -63,15 +78,24 @@ app.get("/login", (req, res) => {
 
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
-  res.redirect(longURL);
-})
+  if (!longURL) {
+    res.status(404).render("error", { message: "This shortened URL does not exist." });
+  } else {
+    res.redirect(longURL);
+  }
+});
 
 app.get("/urls/new", (req, res) => {
   const userId = req.cookies.user_id ;
   const user = users[userId];
-  const templateVars = { user };
-  res.render("urls_new", templateVars);
+  if (!user) {
+    res.redirect("/login");
+  } else {
+    const templateVars = { user };
+    res.render("urls_new", templateVars);
+  }
 });
+
 
 app.get("/urls/:id", (req, res) => {
   const userId = req.cookies.user_id;
@@ -83,8 +107,14 @@ app.get("/urls/:id", (req, res) => {
 app.get("/urls", (req, res) => {
   const userId = req.cookies.user_id;
   const user = users[userId];
-  const templateVars = { urlDatabase: urlDatabase, user };
-  res.render("urls_index", templateVars);
+
+  if (!user) {
+    res.redirect("/login");
+  } else {
+    const userUrls = urlsForUser(userId);
+    const templateVars = { urls: userUrls, user, urlDatabase };
+    res.render("urls_index", templateVars);
+  }
 });
 
 app.get("/urls.json", (req, res) => {
@@ -127,24 +157,58 @@ app.post("/register", (req, res) => {
   res.redirect('/urls');
 });
 
-app.post('/urls/:id', (req, res) => {
-  const id = req.params.id;
-  const newLongURL = req.body.longURL;
-  urlDatabase[id] = newLongURL;
-  res.redirect('/urls');
-})
+app.post("/urls/:id", (req, res) => {
+  const userId = req.cookies.user_id;
+  const user = users[userId];
+  const url = urlDatabase[req.params.id];
 
-app.post(`/urls/:id/delete`, (req, res) => {
-  delete urlDatabase[req.params.id];
+  if (!url) {
+    return res.status(404).render("error", { message: "This shortened URL does not exist." });
+  }
+
+  if (!user) {
+    return res.status(401).render("error", { message: "You need to be logged in to do that." });
+  }
+
+  if (url.userID !== userId) {
+    return res.status(403).render("error", { message: "You do not own this URL." });
+  }
+
+  const newLongURL = req.body.longURL;
+  urlDatabase[req.params.id].longURL = newLongURL;
   res.redirect("/urls");
 });
 
+app.post("/urls/:id/delete", (req, res) => {
+  const userId = req.cookies.user_id;
+  const user = users[userId];
+
+  if (!user) {
+    res.status(401).send("You must be logged in to delete a URL.");
+  } else if (!urlDatabase[req.params.id]) {
+    res.status(404).send("URL not found.");
+  } else if (urlDatabase[req.params.id].userID !== userId) {
+    res.status(403).send("You are not authorized to delete this URL.");
+  } else {
+    delete urlDatabase[req.params.id];
+    res.redirect("/urls");
+  }
+});
+
 app.post("/urls", (req, res) => {
+  const userId = req.cookies.user_id;
+  const user = users[userId];
+  if (!user) {
+    return res.status(401).send("You must be logged in to create a URL.");
+  }
   const shortURL = generateRandomString();
   const longURL = req.body.longURL;
-  urlDatabase[shortURL] = longURL;
+  urlDatabase[shortURL] = {
+    longURL,
+    userID: userId
+  };
   res.redirect(`/urls/${shortURL}`);
-})
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
