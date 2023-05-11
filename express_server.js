@@ -5,13 +5,16 @@ const {
 } = require("./helpers.js");
 const { urlDatabase, users } = require("./database.js");
 const express = require("express");
-const cookieParser = require('cookie-parser');
+// not used anymore const cookieParser = require('cookie-parser');
 var cookieSession = require('cookie-session')
 const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080; // default port 8080
 
+// tells app to use ejs template
 app.set("view engine", "ejs");
+
+// encrypts cookies
 app.use(cookieSession({
   name: 'session',
   keys: ['key'],
@@ -21,8 +24,10 @@ app.use(cookieSession({
 }))
 
 
-
+// converts body into a readable string
 app.use(express.urlencoded({extended: true }));
+
+// <-------------- GET -------------->
 
 app.get("/", (req, res) => {
   const userId = req.session.userId;
@@ -104,13 +109,15 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 })
 
+// <------------ POST ------------------>
 
+// POSt route that Logs out
 app.post('/logout', (req, res) => {
   req.session = null;
   res.redirect('/login');
 });
 
-
+// POST Login
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -136,7 +143,7 @@ app.post("/login", (req, res) => {
   res.redirect("/urls");
 });
 
-
+// POST new user registration 
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -159,7 +166,7 @@ app.post("/register", (req, res) => {
   res.redirect("/urls");
 });
 
-
+// POST edit the existing id
 app.post("/urls/:id", (req, res) => {
   const userId = req.session.userId;
   const user = users[userId];
@@ -182,6 +189,7 @@ app.post("/urls/:id", (req, res) => {
   res.redirect("/urls");
 });
 
+// POST delete existing id
 app.post("/urls/:id/delete", (req, res) => {
   const userId = req.session.userId;
   const user = users[userId];
@@ -198,6 +206,7 @@ app.post("/urls/:id/delete", (req, res) => {
   }
 });
 
+// POST create new id
 app.post("/urls", (req, res) => {
   const userId = req.session.userId;
   const user = users[userId];
@@ -212,6 +221,8 @@ app.post("/urls", (req, res) => {
   };
   res.redirect(`/urls/${shortURL}`);
 });
+
+// <-------------- LISTEN ------------------>
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);

@@ -1,2 +1,30 @@
-# tinyapp
- This project is a web-based application that allows users to store and shorten URLs for easy management and sharing.
+# TinyApp Project
+
+TinyApp is a full stack web application built with Node and Express that allows users to shorten long URLs (à la bit.ly).
+
+## Final Product
+
+(1) User should be able to to create a new account
+(2) User should be able to login 
+(3) User should be able to create/update/Delete their own URL
+(4) User will logout 
+
+## Screenshots
+- [Login Home Page](https://github.com/Rhinokick/tinyapp/blob/main/docs/login.png)
+- [Loged in Home Page](https://github.com/Rhinokick/tinyapp/blob/main/docs/Urls.png)
+- [Create TinyURL](https://github.com/Rhinokick/tinyapp/blob/main/docs/createUrl.png)
+- [Update/Edit URL](https://github.com/Rhinokick/tinyapp/blob/main/docs/editUrl.png)
+
+
+## Dependencies
+
+- Node.js
+- Express
+- EJS
+- bcryptjs
+- cookie-session
+
+## Getting Started
+
+- Install all dependencies (using the `npm install` command).
+- Run the development web server using the `node express_server.js` command.
