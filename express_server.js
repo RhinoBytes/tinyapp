@@ -1,3 +1,9 @@
+const {
+  getUserByEmail,
+  generateRandomString,
+  urlsForUser,
+} = require("./helpers.js");
+const { urlDatabase, users } = require("./database.js");
 const express = require("express");
 const cookieParser = require('cookie-parser');
 var cookieSession = require('cookie-session')
@@ -14,49 +20,7 @@ app.use(cookieSession({
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 }))
 
-const users = {
-  "userRandomID": {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur"
-  },
-  "user2RandomID": {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk"
-  }
-};
 
-function urlsForUser(id) {
-  const userUrls = [];
-  for (const url in urlDatabase) {
-    if (urlDatabase[url].userID === id) {
-      userUrls.push({ shortURL: url, longURL: urlDatabase[url].longURL });
-    }
-  }
-  return userUrls;
-}
-
-function generateRandomString() {
-  let result = "";
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-  const characterLength = characters.length;
-  for (let i = 0; i < 6; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characterLength));
-  }
-  return result;
-}
-
-const urlDatabase = {
-  "b2xVn2": {
-    longURL: "http://www.lighthouselabs.ca",
-    userID: "userRandomID"
-  },
-  "9sm5xK": {
-    longURL: "http://www.google.com",
-    userID: "user2RandomID"
-  }
-};
 
 app.use(express.urlencoded({extended: true }));
 
@@ -147,35 +111,52 @@ app.post('/logout', (req, res) => {
 });
 
 
-app.post('/login', (req, res) => {
-  const { email, password } = req.body;
-  console.log(req.body);
-  const user = Object.values(users).find(user => user.email === email);
-  if (user && bcrypt.compareSync(password, user.password)) {
-    req.session.userId = user.id
-    res.redirect('/urls');
-  } else {
-    res.status(403).send("Email or password is incorrect.");
+app.post("/login", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  if (!email || !password) {
+    res.status(400).send("Email and password cannot be empty");
+    return;
   }
+
+  const user = getUserByEmail(email, users);
+
+  // Check if account is invalid
+  if (!user) {
+    return res.status(403).send("Invalid email");
+  }
+
+  const passwordMatch = bcrypt.compareSync(password, user.password);
+
+  if (!passwordMatch) {
+    return res.status(403).send("Invalid password");
+  }
+
+  req.session.userId = user.id;
+  res.redirect("/urls");
 });
 
 
 app.post("/register", (req, res) => {
-  const { email, password } = req.body;
+  const email = req.body.email;
+  const password = req.body.password;
   if (!email || !password) {
-    return res.status(400).send("Email and password fields are required.");
+    res.status(400).send("Email and password cannot be empty");
+    return;
   }
-  const userExists = Object.values(users).some(user => user.email === email);
-  if (userExists) {
-    return res.status(400).send("Email is already registered.");
+  const user = getUserByEmail(email, users);
+
+  if (user) {
+    res.status(400).send("Email already exists");
+    return;
   }
-  const userId = generateRandomString();
-  const hashedPassword = bcrypt.hashSync(password, 10)
-  console.log(hashedPassword);
-  users[userId] = { id: userId, email, password: hashedPassword };
-  console.log(users);
-  req.session.userId = userId;
-  res.redirect('/urls');
+
+  const newUserID = generateRandomString();
+  const hashedPassword = bcrypt.hashSync(password, 10);
+
+  users[newUserID] = { id: newUserID, email, password: hashedPassword };
+  req.session.userId = newUserID;
+  res.redirect("/urls");
 });
 
 
