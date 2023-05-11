@@ -6,7 +6,7 @@ const {
 const { urlDatabase, users } = require("./database.js");
 const express = require("express");
 // not used anymore const cookieParser = require('cookie-parser');
-var cookieSession = require('cookie-session')
+const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080; // default port 8080
@@ -21,7 +21,7 @@ app.use(cookieSession({
 
   // Cookie Options
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
-}))
+}));
 
 
 // converts body into a readable string
@@ -84,7 +84,7 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const userId = req.session.userId;
-  const user = users[userId]
+  const user = users[userId];
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user };
   res.render("urls_show", templateVars);
 });
@@ -107,7 +107,7 @@ app.get("/urls.json", (req, res) => {
 });
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
-})
+});
 
 // <------------ POST ------------------>
 
@@ -143,7 +143,7 @@ app.post("/login", (req, res) => {
   res.redirect("/urls");
 });
 
-// POST new user registration 
+// POST new user registration
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
