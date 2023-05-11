@@ -5,7 +5,6 @@ const {
 } = require("./helpers.js");
 const { urlDatabase, users } = require("./database.js");
 const express = require("express");
-// not used anymore const cookieParser = require('cookie-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
 const app = express();
